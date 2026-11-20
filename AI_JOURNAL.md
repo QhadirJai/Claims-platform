@@ -28,3 +28,47 @@ Not polished by design — entries are written as the work happens.
 - Global `dotnet-ef` on my machine is v10 (incompatible with SDK 8) — pinned v8.0.11 as a local tool in `.config/dotnet-tools.json`.
 
 ---
+
+## Session 2 — Domain model & lifecycle rules
+
+**Asked:** Generate the Claim aggregate with the agreed lifecycle, plus unit tests.
+
+**Accepted:**
+- Rich domain model: every status change is a method on `Claim` (`AssignTo`, `RequestInformation`, `Approve`...).
+  Illegal transitions throw `DomainException`. Rules live in one place and are unit-testable without a DB.
+- Each change appends a `ClaimEvent` (timeline) — the same records are later published to Kafka.
+- `uint Version` mapped to Postgres `xmin` for optimistic concurrency on pick-up.
+
+**AI went beyond the agreed design — reviewed and kept (to confirm in walkthrough):**
+- *Exposure fallback:* before an officer sets a reserve, exposure uses the **claimed amount**.
+  Otherwise brand-new claims would show zero liability, which understates risk. Approved-but-unsettled claims count at the approved amount.
+- *Only the assigned officer (or a manager) can act on a claim.* Not in the brief, but prevents two
+  officers working the same claim and gives managers an override.
+- *Approved amount cannot exceed claimed amount.* Simplification — no policy limits/deductibles modelled.
+
+**Result:** 15 unit tests passing (happy path, illegal transitions, ownership, exposure).
+
+---
+
+## Session 3 — Persistence, API, security layers
+
+**Asked:** EF Core + Postgres, JWT auth, claimant + staff endpoints, dashboards.
+
+**Accepted:**
+- `SaveChangesAsync` override collects new `ClaimEvent`s, commits, *then* publishes to Kafka — never announce a change that rolled back.
+- Secure-by-default `FallbackPolicy` (every endpoint needs auth unless `[AllowAnonymous]`).
+- Ownership enforced in the query (`c.ClaimantId == tokenUserId`); another user's claim returns **404, not 403**, so we don't leak that it exists.
+- Login returns the same error for unknown email vs wrong password (no account enumeration).
+- Exposure endpoint reuses `Claim.OutstandingExposure` (rule defined once, in the domain). Loads open claims into memory — fine at this scale; at scale I'd push it to SQL or a read model.
+
+**Caught during review (AI-generated code had issues):**
+- **Reserve leak:** first version of the claimant endpoints returned `ReserveAmount` and the "Reserve set to X" timeline entry. Reserves are the insurer's internal estimate — claimants must not see them. Now stripped in the claimant view.
+- **EF Guid gotcha:** with client-generated Guid keys, EF treats new children added to a loaded aggregate as *existing* rows (UPDATE → concurrency failure). Fixed with `ValueGeneratedNever()`.
+- Name clash between our domain `Claim` and `System.Security.Claims.Claim` — aliased.
+
+**Verified manually (curl):** 401 without token / bad password; IDOR → 404; claimant → staff API 403; officer → exposure 403;
+**two officers picking up the same claim simultaneously → one 200, one 409**; full lifecycle incl. info request round-trip.
+
+**Open question I'm leaving as-is:** non-assigned officer acting on a claim returns 400 (domain rule) rather than 403. Defensible either way.
+
+---
