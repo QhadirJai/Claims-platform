@@ -2,6 +2,7 @@ import { DecimalPipe } from '@angular/common';
 import { Component, OnInit, inject, signal } from '@angular/core';
 import { FormsModule } from '@angular/forms';
 import { Router, RouterLink } from '@angular/router';
+import { Subscription } from 'rxjs';
 import { ApiService, errorMessage } from '../core/api.service';
 import { CLAIM_TYPES, ClaimSummary, MARKETS, STATUSES } from '../core/models';
 import { IconComponent } from '../shared/icon';
@@ -85,9 +86,13 @@ export class QueueComponent implements OnInit {
 
   ngOnInit() { this.load(); }
 
+  private request?: Subscription;
+
   load() {
+    // Cancel the previous request so a slow, older response can't overwrite newer filter results.
+    this.request?.unsubscribe();
     this.loading.set(true);
-    this.api.staffClaims({ ...this.filter, pageSize: 100 }).subscribe({
+    this.request = this.api.staffClaims({ ...this.filter, pageSize: 100 }).subscribe({
       next: r => { this.claims.set(r.items); this.total.set(r.total); this.error.set(''); this.loading.set(false); },
       error: err => { this.error.set(errorMessage(err)); this.loading.set(false); }
     });

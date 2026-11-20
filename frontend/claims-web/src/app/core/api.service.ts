@@ -56,6 +56,8 @@ export class ApiService {
   // Notifications
   notifications() { return this.http.get<AppNotification[]>(`${API_URL}/notifications`); }
   markRead(id: string) { return this.http.post<void>(`${API_URL}/notifications/${id}/read`, {}); }
+  markAllRead() { return this.http.post<void>(`${API_URL}/notifications/read-all`, {}); }
+  unreadCount() { return this.http.get<{ count: number }>(`${API_URL}/notifications/unread-count`); }
 }
 
 /** Extracts a readable message from an API ProblemDetails / validation error. */

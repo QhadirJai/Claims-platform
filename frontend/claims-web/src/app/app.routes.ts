@@ -22,6 +22,7 @@ export const routes: Routes = [
     children: [
       { path: '', loadComponent: () => import('./staff/queue.component').then(m => m.QueueComponent) },
       { path: 'claims/:id', loadComponent: () => import('./staff/staff-claim-detail.component').then(m => m.StaffClaimDetailComponent) },
+      { path: 'inbox', loadComponent: () => import('./staff/inbox.component').then(m => m.InboxComponent) },
       { path: 'dashboard', loadComponent: () => import('./staff/dashboard.component').then(m => m.DashboardComponent) }
     ]
   },

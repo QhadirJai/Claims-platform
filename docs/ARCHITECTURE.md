@@ -93,8 +93,11 @@ OpenAPI spec in CI, so a contract change breaks the frontend build rather than t
 - **Frontend:** pages load fresh data on navigation and after every action. There is **no live push**:
   a claimant sees a status change made by an officer on the next page load. This was a deliberate cut
   for the time-box. Next step: a server-sent events or SignalR channel fed by the same Kafka events.
-- **Officer notifications are stored but not yet shown in the staff UI.** They can be read through
-  `GET /api/notifications`. Officers currently find new work through the queue (unassigned, mine).
+- **Staff inbox:** officers get an Inbox page with an unread count in the sidebar. The count is refreshed on
+  every navigation and polled every 30 seconds while the tab is visible (`GET /api/notifications/unread-count`,
+  a single indexed count). Opening a notification marks it read and goes to the claim.
+- **Stale responses:** the queue cancels the previous request when filters change, so a slow older
+  response can't overwrite newer results.
 - **Concurrency:** two officers picking up the same claim are protected by optimistic concurrency
   (Postgres `xmin`). One succeeds; the other gets 409 and the queue reloads.
 
@@ -167,5 +170,5 @@ Team-wide: total open, unassigned, and the oldest unassigned claim. The queue so
 ## 8. Out of scope (deliberate)
 
 Real identity provider / SSO, payments, multi-currency, policy limits and deductibles, SLA engine,
-transactional outbox, API gateway, live push to the browser, a notification inbox for staff, a caching layer (Redis).
+transactional outbox, API gateway, live push to the browser (polling is used instead), a caching layer (Redis).
 Each has a stated next step above or in the README; none was needed to prove the core flow.

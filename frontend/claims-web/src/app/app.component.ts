@@ -1,6 +1,7 @@
 import { Component, computed, inject } from '@angular/core';
 import { RouterLink, RouterLinkActive, RouterOutlet } from '@angular/router';
 import { AuthService } from './core/auth';
+import { NotificationCenter } from './core/notifications';
 import { IconComponent } from './shared/icon';
 
 const ROLE_LABEL: Record<string, string> = { Claimant: 'Claimant', ClaimsOfficer: 'Claims officer', Manager: 'Manager' };
@@ -21,6 +22,10 @@ const ROLE_LABEL: Record<string, string> = { Claimant: 'Claimant', ClaimsOfficer
           @if (auth.isStaff()) {
             <a routerLink="/staff" routerLinkActive="active" [routerLinkActiveOptions]="{ exact: true }" aria-label="Queue">
               <app-icon name="inbox" /><span class="nav-label">Queue</span></a>
+            <a routerLink="/staff/inbox" routerLinkActive="active"
+               [attr.aria-label]="notifications.unread() ? 'Inbox, ' + notifications.unread() + ' unread' : 'Inbox'">
+              <app-icon name="bell" /><span class="nav-label">Inbox</span>
+              @if (notifications.unread()) { <span class="nav-count">{{ notifications.unread() > 99 ? '99+' : notifications.unread() }}</span> }</a>
             <a routerLink="/staff/dashboard" routerLinkActive="active" aria-label="Dashboard">
               <app-icon name="chart" /><span class="nav-label">Dashboard</span></a>
           } @else {
@@ -44,6 +49,7 @@ const ROLE_LABEL: Record<string, string> = { Claimant: 'Claimant', ClaimsOfficer
 })
 export class AppComponent {
   auth = inject(AuthService);
+  notifications = inject(NotificationCenter);
   initials = computed(() => (this.auth.user()?.fullName ?? '').split(' ').map(p => p[0]).slice(0, 2).join('').toUpperCase());
   role = computed(() => ROLE_LABEL[this.auth.user()?.role ?? ''] ?? '');
 }

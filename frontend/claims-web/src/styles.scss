@@ -369,3 +369,22 @@ tfoot td { font-weight: 650; color: var(--ink); background: var(--surface-2); bo
 .claim-group + .claim-group { margin-top: 1.5rem; }
 .group-title { display: flex; align-items: center; gap: .5rem; font-size: .78rem; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; margin-bottom: .6rem;
   .count { font-size: .72rem; color: var(--muted); background: var(--surface); border: 1px solid var(--border); border-radius: 999px; padding: 0 .45rem; letter-spacing: 0; } }
+
+/* ── Staff inbox ───────────────────────────────────────────────────── */
+.side-nav a { position: relative; }
+.nav-count { margin-left: auto; min-width: 20px; height: 20px; padding: 0 6px; border-radius: 999px; background: var(--accent); color: #fff; font-size: .72rem; font-weight: 650; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+@media (max-width: 600px) { .nav-count { position: absolute; top: 2px; right: 0; min-width: 16px; height: 16px; font-size: .62rem; padding: 0 4px; } }
+.pill { margin-left: .35rem; font-size: .7rem; font-weight: 650; background: var(--accent); color: #fff; border-radius: 999px; padding: 0 .4rem; }
+.inbox { overflow: hidden; }
+.inbox-row { width: 100%; display: flex; align-items: center; gap: .85rem; padding: .9rem 1.15rem; border: none; border-bottom: 1px solid var(--border); border-radius: 0; background: var(--surface); text-align: left; font-weight: 400; justify-content: flex-start; }
+.inbox-row:last-child { border-bottom: none; }
+.inbox-row:hover:not(:disabled) { background: var(--surface-2); border-color: var(--border); }
+.inbox-row.unread { background: #fbfdfc; }
+.inbox-row.unread .inbox-message { font-weight: 600; color: var(--ink); }
+.inbox-icon { width: 34px; height: 34px; border-radius: 9px; background: var(--surface-2); border: 1px solid var(--border); color: var(--muted); display: grid; place-items: center; flex-shrink: 0; }
+.inbox-row.unread .inbox-icon { background: var(--accent-soft); border-color: #cfe1da; color: var(--accent); }
+.inbox-text { display: grid; gap: .1rem; flex: 1; min-width: 0; }
+.inbox-message { color: var(--text); white-space: normal; }
+.unread-dot { width: 8px; height: 8px; border-radius: 50%; background: var(--accent); flex-shrink: 0; }
+.inbox-arrow { color: var(--faint); }
+.skeleton-row { height: 64px; background: linear-gradient(90deg, var(--surface) 0%, var(--surface-2) 50%, var(--surface) 100%); background-size: 200% 100%; animation: shimmer 1.2s infinite linear; }

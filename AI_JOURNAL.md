@@ -148,3 +148,19 @@ This is the demo for "what happens if the async side is down": nothing is lost, 
 **Tests:** 34 backend (photo rules, sanitiser with crafted JPEG/PNG, file-name cleaning, notification routing). 25 Playwright, including photo upload and preview, client-side and server-side rejection of a disguised file, cross-claimant 404 on a photo URL, and the Back-button behaviour.
 
 ---
+
+## Session 8 — Checking against the brief, staff inbox
+
+**Asked:** Check the build against the original brief, then add the missing piece.
+
+**Accepted:**
+- Everything the brief asks for was built. The gaps were in the explanation: `ARCHITECTURE.md` still called file uploads out of scope, had the wrong exposure formula and named an event that doesn't exist. It also didn't answer two of the brief's questions (who owns the contract, async across both tiers). Fixed and documented honestly, including what is *not* built.
+- That review showed officers were notified (claimant replied, new photos) but had nowhere to see it. Added a staff Inbox with an unread count in the sidebar.
+- Unread count is polled every 30 s and refreshed on navigation, not pushed. That is honest and cheap at this scale. Live push (SSE/SignalR) stays the documented next step.
+
+**Caught:** The new test run exposed a real race in the queue. Changing filters quickly could let a slow, older response overwrite the newer results. Fixed by cancelling the previous request. The old test had passed by luck.
+
+**Time:** the brief targets 2–3 hours with a 5-hour cap. Photos, the redesign and the inbox went beyond the core. I'll state the total time openly in the walkthrough and explain why each extra was worth it.
+
+---
+

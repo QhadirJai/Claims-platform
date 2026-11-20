@@ -80,9 +80,13 @@ All passwords: `Passw0rd!`
 | GET | `/api/claims/mine` | Claimant |
 | GET | `/api/claims/{id}` | Claimant (own claims only) |
 | POST | `/api/claims/{id}/info-requests/{reqId}/response` | Claimant |
-| GET | `/api/notifications` | any logged-in user |
+| POST | `/api/claims/{id}/attachments` (multipart `files`) | Claimant (own claims, before a decision) |
+| GET | `/api/claims/{id}/attachments/{attachmentId}` | Claimant (own claims only) |
+| GET | `/api/notifications` · `/api/notifications/unread-count` | any logged-in user |
+| POST | `/api/notifications/{id}/read` · `/api/notifications/read-all` | any logged-in user |
 | GET | `/api/staff/claims?scope=mine\|unassigned\|all&status=&type=&market=&openOnly=` | Staff |
 | GET | `/api/staff/claims/{id}` | Staff |
+| GET | `/api/staff/claims/{id}/attachments/{attachmentId}` | Staff |
 | POST | `/api/staff/claims/{id}/assign` | Staff — pick up (409 if someone else got it first) |
 | PUT | `/api/staff/claims/{id}/reserve` | Assigned officer / manager |
 | POST | `/api/staff/claims/{id}/info-requests` | Assigned officer / manager |

@@ -58,6 +58,7 @@ test.describe('Staff queue & dashboards', () => {
     await login(page, USERS.olivia);
     await page.getByRole('button', { name: 'All claims' }).click();
     await page.locator('.filters select').nth(2).selectOption('HK');
+    await expect(page.locator('.table-wrap.loading')).toHaveCount(0);
     const rows = page.locator('tbody tr');
     await expect(rows.first()).toBeVisible();
     for (const row of await rows.all()) await expect(row).toContainText('HK');

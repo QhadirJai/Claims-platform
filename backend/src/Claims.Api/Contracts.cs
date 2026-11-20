@@ -58,3 +58,4 @@ public record ExposureDto(decimal TotalExposure, int OpenClaims, IReadOnlyList<E
 
 // ── Notifications ────────────────────────────────────────────────────
 public record NotificationDto(Guid Id, Guid ClaimId, string Message, bool IsRead, DateTime CreatedAt);
+public record UnreadCountDto(int Count);
