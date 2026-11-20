@@ -3,29 +3,46 @@ import { FormsModule } from '@angular/forms';
 import { Router } from '@angular/router';
 import { errorMessage } from '../core/api.service';
 import { AuthService } from '../core/auth';
+import { IconComponent } from '../shared/icon';
 
 @Component({
   selector: 'app-login',
   standalone: true,
-  imports: [FormsModule],
+  imports: [FormsModule, IconComponent],
   template: `
-  <div class="login-wrap">
-    <form class="card login" (ngSubmit)="submit()">
-      <h1>ClaimsHub</h1>
-      <p class="muted">Sign in to report or manage claims.</p>
-      <label>Email <input name="email" type="email" [(ngModel)]="email" required autocomplete="username"></label>
-      <label>Password <input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password"></label>
-      @if (error()) { <p class="error">{{ error() }}</p> }
-      <button class="primary" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+  <div class="login-page">
+    <section class="login-intro">
+      <span class="brand"><span class="brand-mark"><app-icon name="shield" [size]="16" /></span> ClaimsHub</span>
+      <div>
+        <h1>Report it once.<br>Follow it to the end.</h1>
+        <p>Claimants report incidents with photos from the scene. Claims staff pick them up, assess and decide, in one shared record.</p>
+      </div>
+      <ul class="intro-points">
+        <li><app-icon name="camera" /> Photo evidence attached at the scene</li>
+        <li><app-icon name="clock" /> Every step recorded on the claim timeline</li>
+        <li><app-icon name="bell" /> Updates as soon as the status changes</li>
+      </ul>
+    </section>
 
-      <details class="demo">
-        <summary>Demo accounts (password: Passw0rd!)</summary>
-        @for (d of demo; track d.email) {
-          <button type="button" class="link" (click)="email = d.email; password = 'Passw0rd!'">{{ d.email }}</button>
-          <span class="muted"> — {{ d.role }}</span><br>
-        }
-      </details>
-    </form>
+    <section class="login-panel">
+      <form class="login-form" (ngSubmit)="submit()">
+        <h2>Sign in</h2>
+        <p class="muted">Use your ClaimsHub account.</p>
+        <label>Email <input name="email" type="email" [(ngModel)]="email" required autocomplete="username"></label>
+        <label>Password <input name="password" type="password" [(ngModel)]="password" required autocomplete="current-password"></label>
+        @if (error()) { <p class="error"><app-icon name="alert" [size]="15" /> {{ error() }}</p> }
+        <button class="primary block" [disabled]="busy()">{{ busy() ? 'Signing in…' : 'Sign in' }}</button>
+
+        <div class="demo">
+          <p class="eyebrow">Demo accounts · password Passw0rd!</p>
+          @for (d of demo; track d.email) {
+            <button type="button" class="demo-row" (click)="email = d.email; password = 'Passw0rd!'">
+              <span>{{ d.email }}</span><span class="muted small">{{ d.role }}</span>
+            </button>
+          }
+        </div>
+      </form>
+    </section>
   </div>`
 })
 export class LoginComponent {
@@ -49,7 +66,8 @@ export class LoginComponent {
     this.busy.set(true);
     this.error.set('');
     this.auth.login(this.email, this.password).subscribe({
-      next: res => this.router.navigateByUrl(this.auth.homeFor(res.user.role)),
+      // replaceUrl: Back from the portal must not land on the login form again.
+      next: res => this.router.navigateByUrl(this.auth.homeFor(res.user.role), { replaceUrl: true }),
       error: err => { this.error.set(errorMessage(err)); this.busy.set(false); }
     });
   }

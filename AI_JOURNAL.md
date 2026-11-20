@@ -107,3 +107,44 @@ This is the demo for "what happens if the async side is down": nothing is lost, 
 **Trade-off noted:** JWT kept in `sessionStorage` (cleared on tab close). An httpOnly cookie would be safer against XSS — listed as next step.
 
 ---
+
+## Session 6 — API and end-to-end testing
+
+**Asked:** A Postman collection for every endpoint, then Playwright tests that drive the real stack in a browser.
+
+**Accepted:**
+- Postman: 43 requests, 62 assertions, including the security cases (401, 403, IDOR → 404, 409 on simultaneous pick-up).
+- Playwright runs against the real API, Postgres, Kafka and worker, not mocks. One worker, serial, because the tests share a database.
+- The lifecycle test covers both portals and three users, and polls until the Kafka-driven notification arrives (asynchronous by design).
+- A separate mobile project (Pixel 7 viewport) checks a claimant can report from a phone with no horizontal scrolling.
+
+**Caught:** Two tests failed after the UI showed the same text in two places (request panel and timeline). The app was right; the tests were ambiguous. Fixed by scoping each check to its panel.
+
+**Lost a session mid-way.** The chat history was gone, but this journal, the commit history and the code were enough to rebuild the context and carry on.
+
+---
+
+## Session 7 — Photo evidence, redesign, session handling
+
+**Asked:** Make the claim scenario realistic with photos, and add Redis "to make it smooth".
+
+**Challenged / decided myself:**
+- **Redis — dropped.** AI pushed back: everything runs locally with small data, so Redis would not make the UI feel smoother. It would add stale-data and per-user cache-key risks. Where it would earn its place (caching the exposure dashboard, rate-limiting login, token revocation) goes under "at scale" in the README. I agreed.
+- **Photos — yes.** The officer's "please upload photos" request had no way to be answered except "sent via email".
+
+**Accepted (photo design):**
+- Photo rules live in the domain (`Claim.AddAttachments`): owner only, only before a decision, max 10 per claim, one timeline event per batch.
+- Bytes go to S3-compatible object storage, not Postgres. The bucket is private and photos are only served through the API with the same ownership rule (other claimant → 404).
+- Server-side checks don't trust the client: file type from the actual bytes, 10 MB limit, EXIF/XMP/IPTC and PNG text chunks stripped (GPS is personal data), server-generated storage keys (the file name is display-only), `nosniff` and a sandbox CSP on download.
+- The browser resizes to 2048px and re-encodes as JPEG before upload. A phone photo goes from ~6 MB to ~400 KB, which is the "smooth" I actually wanted. It also bakes in camera orientation. Not a security boundary; the server still checks.
+- New `EvidenceAdded` event → the worker notifies the assigned officer.
+
+**Overrode / adjusted:**
+- **MinIO → SeaweedFS.** MinIO no longer publishes Docker images (pull denied on Docker Hub and Quay). Swapped to SeaweedFS's S3 gateway. No code change, because the API talks plain S3 via the AWS SDK.
+- **Session:** I asked that Back after login must not show the login form again. Added a guest guard on `/login`, `replaceUrl` on login and logout, and an expired token now counts as signed out.
+- **Redesign:** I asked for a modern look that doesn't feel AI-generated, and no emoji. Result: one accent colour, warm neutrals, one hand-drawn SVG icon set, no gradients.
+- **Claimant layout:** The first version still had the timeline stacked under the claim. I didn't find that user-friendly, so the claimant portal got the same sidebar as staff and a two-column layout: timeline and updates in a side panel, the claim in the main column. Claims are grouped by "Needs your action / In progress / Closed".
+
+**Tests:** 34 backend (photo rules, sanitiser with crafted JPEG/PNG, file-name cleaning, notification routing). 25 Playwright, including photo upload and preview, client-side and server-side rejection of a disguised file, cross-claimant 404 on a photo URL, and the Back-button behaviour.
+
+---

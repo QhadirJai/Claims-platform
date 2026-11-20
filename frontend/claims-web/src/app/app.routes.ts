@@ -1,8 +1,8 @@
 import { Routes } from '@angular/router';
-import { roleGuard } from './core/auth';
+import { guestGuard, roleGuard } from './core/auth';
 
 export const routes: Routes = [
-  { path: 'login', loadComponent: () => import('./login/login.component').then(m => m.LoginComponent) },
+  { path: 'login', canActivate: [guestGuard], loadComponent: () => import('./login/login.component').then(m => m.LoginComponent) },
 
   // Claimant portal (responsive, mobile-first)
   {

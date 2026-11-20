@@ -3,26 +3,27 @@ import { Component, OnInit, inject, signal } from '@angular/core';
 import { ApiService } from '../core/api.service';
 import { AuthService } from '../core/auth';
 import { Exposure, Workload } from '../core/models';
+import { IconComponent } from '../shared/icon';
 
 @Component({
   selector: 'app-dashboard',
   standalone: true,
-  imports: [DecimalPipe],
+  imports: [DecimalPipe, IconComponent],
   template: `
-  <div class="page-head"><h2>Team dashboard</h2></div>
+  <div class="page-head"><div><h2>Team dashboard</h2><p class="muted">Workload and outstanding liability across all markets.</p></div></div>
 
   @if (workload(); as w) {
     <div class="stats">
-      <div class="card stat"><div class="label">Open claims</div><div class="value">{{ w.totalOpen }}</div></div>
-      <div class="card stat"><div class="label">Unassigned</div><div class="value">{{ w.unassigned }}</div></div>
+      <div class="card stat"><div class="label"><app-icon name="file" [size]="15" /> Open claims</div><div class="value">{{ w.totalOpen }}</div></div>
+      <div class="card stat"><div class="label"><app-icon name="inbox" [size]="15" /> Unassigned</div><div class="value">{{ w.unassigned }}</div></div>
       <div class="card stat" [class.warn]="w.oldestUnassignedAgeDays >= 3">
-        <div class="label">Oldest unassigned</div><div class="value">{{ w.oldestUnassignedAgeDays }} d</div></div>
+        <div class="label"><app-icon name="clock" [size]="15" /> Oldest unassigned</div><div class="value">{{ w.oldestUnassignedAgeDays }}<span class="unit">days</span></div></div>
       @if (exposure(); as e) {
-        <div class="card stat"><div class="label">Outstanding exposure</div><div class="value">{{ e.totalExposure | number:'1.0-0' }}</div></div>
+        <div class="card stat"><div class="label"><app-icon name="chart" [size]="15" /> Outstanding exposure</div><div class="value">{{ e.totalExposure | number:'1.0-0' }}</div></div>
       }
     </div>
 
-    <h3>Workload by officer</h3>
+    <h3 class="section-title spaced">Workload by officer</h3>
     <div class="card table-wrap">
       <table>
         <thead><tr><th>Officer</th><th class="num">Open</th><th class="num">Under review</th><th class="num">Info requested</th>
@@ -43,7 +44,7 @@ import { Exposure, Workload } from '../core/models';
 
   @if (auth.isManager()) {
     @if (exposure(); as e) {
-      <h3>Liability exposure by market &amp; type</h3>
+      <h3 class="section-title spaced">Liability exposure by market &amp; type</h3>
       <p class="muted small">Open claims count at their reserve (or claimed amount if no reserve is set yet); approved claims at the approved amount until settled.</p>
       <div class="card table-wrap">
         <table>
@@ -66,7 +67,7 @@ import { Exposure, Workload } from '../core/models';
       </div>
     }
   } @else {
-    <p class="muted small">Liability exposure is visible to managers.</p>
+    <p class="muted small with-icon spaced"><app-icon name="shield" [size]="15" /> Liability exposure is visible to managers.</p>
   }`
 })
 export class DashboardComponent implements OnInit {

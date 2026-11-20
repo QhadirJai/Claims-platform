@@ -22,6 +22,21 @@ export class ApiService {
     return this.http.post<ClaimDetail>(`${API_URL}/claims/${id}/info-requests/${requestId}/response`, { response });
   }
 
+  /** Multipart upload; field name "files" matches the API. */
+  uploadPhotos(id: string, photos: { blob: Blob; name: string }[]) {
+    const form = new FormData();
+    for (const p of photos) form.append('files', p.blob, p.name);
+    return this.http.post<ClaimDetail>(`${API_URL}/claims/${id}/attachments`, form);
+  }
+
+  /** Photos are behind auth, so they are fetched as blobs (an <img src> cannot send the bearer token). */
+  photoUrl(scope: 'claimant' | 'staff', claimId: string, attachmentId: string) {
+    return scope === 'staff'
+      ? `${API_URL}/staff/claims/${claimId}/attachments/${attachmentId}`
+      : `${API_URL}/claims/${claimId}/attachments/${attachmentId}`;
+  }
+  photo(url: string) { return this.http.get(url, { responseType: 'blob' }); }
+
   // Staff
   staffClaims(filter: Record<string, string | number | boolean | null | undefined>) {
     let params = new HttpParams();

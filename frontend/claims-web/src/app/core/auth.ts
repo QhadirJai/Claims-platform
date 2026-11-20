@@ -23,7 +23,13 @@ export class AuthService {
   readonly isStaff = computed(() => ['ClaimsOfficer', 'Manager'].includes(this.user()?.role ?? ''));
   readonly isManager = computed(() => this.user()?.role === 'Manager');
 
-  get token(): string | null { return this.session()?.token ?? null; }
+  /** Cleanup hooks (e.g. cached photo blobs) run on sign-out. */
+  readonly onLogout: (() => void)[] = [];
+
+  get token(): string | null {
+    const s = this.session();
+    return s && new Date(s.expiresAt) > new Date() ? s.token : null;
+  }
 
   login(email: string, password: string) {
     return this.api.login(email, password).pipe(tap(res => {
@@ -36,7 +42,9 @@ export class AuthService {
   logout() {
     sessionStorage.removeItem(STORAGE_KEY);
     this.session.set(null);
-    this.router.navigate(['/login']);
+    this.onLogout.forEach(fn => fn());
+    // replaceUrl: the page just left should not be reachable with Back.
+    this.router.navigate(['/login'], { replaceUrl: true });
   }
 
   homeFor(role: UserRole | undefined): string {
@@ -72,7 +80,17 @@ export const roleGuard = (...roles: UserRole[]): CanActivateFn => () => {
   const auth = inject(AuthService);
   const router = inject(Router);
   const user = auth.user();
-  if (!user) return router.createUrlTree(['/login']);
+  if (!user || !auth.token) return router.createUrlTree(['/login']); // no session or it expired
   if (!roles.includes(user.role)) return router.createUrlTree([auth.homeFor(user.role)]);
   return true;
+};
+
+/**
+ * Login page guard: a signed-in user (e.g. pressing Back after logging in) is sent to their portal
+ * instead of seeing the login form again. Only signing out returns you to the login screen.
+ */
+export const guestGuard: CanActivateFn = () => {
+  const auth = inject(AuthService);
+  const user = auth.user();
+  return user && auth.token ? inject(Router).createUrlTree([auth.homeFor(user.role)]) : true;
 };

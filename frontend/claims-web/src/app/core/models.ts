@@ -17,12 +17,16 @@ export interface ClaimSummary {
   id: string; claimNumber: string; type: ClaimType; market: Market; status: ClaimStatus;
   claimedAmount: number; reserveAmount: number | null; approvedAmount: number | null;
   claimantName: string; assignedOfficerName: string | null;
-  createdAt: string; updatedAt: string; ageDays: number;
+  createdAt: string; updatedAt: string; ageDays: number; photoCount: number;
 }
 
 export interface InformationRequest {
   id: string; question: string; response: string | null; requestedAt: string; respondedAt: string | null;
 }
+
+export interface Attachment { id: string; fileName: string; contentType: string; sizeBytes: number; uploadedAt: string; }
+
+export const MAX_PHOTOS = 10;
 
 export interface TimelineEntry {
   eventType: string; fromStatus: ClaimStatus | null; toStatus: ClaimStatus; note: string | null; occurredAt: string;
@@ -36,6 +40,7 @@ export interface ClaimDetail {
   createdAt: string; updatedAt: string; closedAt: string | null;
   informationRequests: InformationRequest[];
   timeline: TimelineEntry[];
+  attachments: Attachment[];
 }
 
 export interface SubmitClaim {
