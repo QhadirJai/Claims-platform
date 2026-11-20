@@ -72,3 +72,19 @@ Not polished by design — entries are written as the work happens.
 **Open question I'm leaving as-is:** non-assigned officer acting on a claim returns 400 (domain rule) rather than 403. Defensible either way.
 
 ---
+
+## Session 4 — Kafka worker (notifications)
+
+**Asked:** A separate worker process consuming `claims.events` and producing notifications.
+
+**Accepted:**
+- Manual offset commit *after* DB write → at-least-once delivery. Duplicates handled by unique `(UserId, SourceEventId)` index + pre-check → idempotent consumer.
+- Transient errors: no commit, seek back, retry. Unreadable (poison) messages: log + skip (production: dead-letter topic).
+- `ReserveSet` deliberately produces **no** claimant notification (internal figure).
+
+**Verified:** Started the worker *after* events had been published — it caught up from Kafka and produced all notifications.
+This is the demo for "what happens if the async side is down": nothing is lost, it catches up.
+
+**Tests:** 18 passing (added notification routing tests).
+
+---
