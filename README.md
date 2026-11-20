@@ -91,6 +91,8 @@ All passwords: `Passw0rd!`
 
 Full contract: Swagger UI at `/swagger` when the API is running.
 
+**Postman:** import [docs/postman/ClaimsHub.postman_collection.json](docs/postman/ClaimsHub.postman_collection.json) and run the whole collection in order. Logins store tokens automatically, IDs are chained between requests, and 62 assertions cover the happy path, illegal transitions and security checks. CLI: `npx newman run docs/postman/ClaimsHub.postman_collection.json`.
+
 ## Things to try
 
 1. **Async resilience:** stop the Worker, submit a claim as Alice, start the Worker again. Notifications appear, because nothing was lost; the worker catches up from Kafka.
