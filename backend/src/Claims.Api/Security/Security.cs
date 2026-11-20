@@ -66,6 +66,7 @@ public class DomainExceptionHandler(IProblemDetailsService problemDetails) : IEx
         (int status, string title)? mapped = ex switch
         {
             DomainException => (StatusCodes.Status400BadRequest, "Business rule violation"),
+            Claims.Infrastructure.InvalidImageException => (StatusCodes.Status400BadRequest, "Invalid photo"),
             DbUpdateConcurrencyException => (StatusCodes.Status409Conflict,
                 "This claim was changed by someone else. Refresh and try again."),
             _ => null
@@ -80,7 +81,7 @@ public class DomainExceptionHandler(IProblemDetailsService problemDetails) : IEx
             {
                 Status = mapped.Value.status,
                 Title = mapped.Value.title,
-                Detail = ex is DomainException ? ex.Message : null
+                Detail = ex is DomainException or Claims.Infrastructure.InvalidImageException ? ex.Message : null
             }
         });
     }

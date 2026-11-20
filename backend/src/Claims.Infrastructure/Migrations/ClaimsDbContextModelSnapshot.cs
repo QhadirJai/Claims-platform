@@ -115,6 +115,48 @@ namespace Claims.Infrastructure.Migrations
                     b.ToTable("Claims");
                 });
 
+            modelBuilder.Entity("Claims.Domain.ClaimAttachment", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uuid");
+
+                    b.Property<Guid>("ClaimId")
+                        .HasColumnType("uuid");
+
+                    b.Property<string>("ContentType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("character varying(50)");
+
+                    b.Property<string>("FileName")
+                        .IsRequired()
+                        .HasMaxLength(100)
+                        .HasColumnType("character varying(100)");
+
+                    b.Property<long>("SizeBytes")
+                        .HasColumnType("bigint");
+
+                    b.Property<string>("StorageKey")
+                        .IsRequired()
+                        .HasMaxLength(200)
+                        .HasColumnType("character varying(200)");
+
+                    b.Property<DateTime>("UploadedAt")
+                        .HasColumnType("timestamp with time zone");
+
+                    b.Property<Guid>("UploadedById")
+                        .HasColumnType("uuid");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("ClaimId");
+
+                    b.HasIndex("StorageKey")
+                        .IsUnique();
+
+                    b.ToTable("ClaimAttachments");
+                });
+
             modelBuilder.Entity("Claims.Domain.ClaimEvent", b =>
                 {
                     b.Property<Guid>("Id")
@@ -272,6 +314,15 @@ namespace Claims.Infrastructure.Migrations
                     b.Navigation("Claimant");
                 });
 
+            modelBuilder.Entity("Claims.Domain.ClaimAttachment", b =>
+                {
+                    b.HasOne("Claims.Domain.Claim", null)
+                        .WithMany("Attachments")
+                        .HasForeignKey("ClaimId")
+                        .OnDelete(DeleteBehavior.Cascade)
+                        .IsRequired();
+                });
+
             modelBuilder.Entity("Claims.Domain.ClaimEvent", b =>
                 {
                     b.HasOne("Claims.Domain.Claim", null)
@@ -292,6 +343,8 @@ namespace Claims.Infrastructure.Migrations
 
             modelBuilder.Entity("Claims.Domain.Claim", b =>
                 {
+                    b.Navigation("Attachments");
+
                     b.Navigation("Events");
 
                     b.Navigation("InformationRequests");

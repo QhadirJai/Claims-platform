@@ -38,6 +38,9 @@ public class Claim
     public User? AssignedOfficer { get; private set; }
     public List<InformationRequest> InformationRequests { get; private set; } = [];
     public List<ClaimEvent> Events { get; private set; } = [];
+    public List<ClaimAttachment> Attachments { get; private set; } = [];
+
+    public const int MaxAttachments = 10;
 
     private Claim() { } // EF
 
@@ -190,6 +193,37 @@ public class Claim
         Status = ClaimStatus.Settled;
         ClosedAt = now;
         Record(ClaimEventTypes.Settled, actorId, from, now, $"Settled for {ApprovedAmount:N2}");
+    }
+
+    /// <summary>
+    /// Claimant adds photo evidence. Allowed while the claim is still being decided, so photos can
+    /// accompany the first report or answer an information request. One timeline event per batch.
+    /// </summary>
+    public void AddAttachments(IReadOnlyList<NewAttachment> files, Guid claimantId, DateTime now)
+    {
+        if (claimantId != ClaimantId) throw new DomainException("Only the claimant can add photos to this claim.");
+        if (Status is not (ClaimStatus.Submitted or ClaimStatus.UnderReview or ClaimStatus.InfoRequested))
+            throw new DomainException($"Photos can only be added before a decision is made (current status: {Status}).");
+        if (files.Count == 0) throw new DomainException("No photos were provided.");
+        if (Attachments.Count + files.Count > MaxAttachments)
+            throw new DomainException($"A claim can have at most {MaxAttachments} photos ({Attachments.Count} already attached).");
+
+        foreach (var f in files)
+        {
+            Attachments.Add(new ClaimAttachment
+            {
+                Id = f.Id,
+                ClaimId = Id,
+                UploadedById = claimantId,
+                FileName = f.FileName,
+                ContentType = f.ContentType,
+                SizeBytes = f.SizeBytes,
+                StorageKey = f.StorageKey,
+                UploadedAt = now
+            });
+        }
+        Record(ClaimEventTypes.EvidenceAdded, claimantId, Status, now,
+            files.Count == 1 ? "1 photo added" : $"{files.Count} photos added");
     }
 
     /// <summary>Only the assigned officer (or a manager) may act on a claim.</summary>

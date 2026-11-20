@@ -35,6 +35,18 @@ services:
       KAFKA_AUTO_CREATE_TOPICS_ENABLE: "true"
       KAFKA_NUM_PARTITIONS: 3
 
+  object-store:
+    # S3-compatible object storage for claim photos (SeaweedFS; MinIO no longer publishes images).
+    # The bucket is private: photos are only served through the API after an ownership check.
+    image: chrislusf/seaweedfs:3.80
+    container_name: claims-object-store
+    command: server -dir=/data -s3 -s3.port=8333 -s3.config=/etc/seaweedfs/s3.json
+    ports:
+      - "8333:8333"   # S3 API
+    volumes:
+      - objectdata:/data
+      - ./infra/seaweedfs-s3.json:/etc/seaweedfs/s3.json:ro
+
   kafka-ui:
     image: provectuslabs/kafka-ui:v0.7.2
     container_name: claims-kafka-ui
@@ -48,3 +60,4 @@ services:
 
 volumes:
   pgdata:
+  objectdata:

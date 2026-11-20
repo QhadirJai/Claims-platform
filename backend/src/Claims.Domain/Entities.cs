@@ -42,6 +42,25 @@ public class ClaimEvent
     public DateTime OccurredAt { get; set; }
 }
 
+/// <summary>
+/// Photo evidence attached to a claim. The bytes live in object storage under <see cref="StorageKey"/>;
+/// this row holds the metadata and is what authorisation is checked against.
+/// </summary>
+public class ClaimAttachment
+{
+    public Guid Id { get; set; } = Guid.NewGuid();
+    public Guid ClaimId { get; set; }
+    public Guid UploadedById { get; set; }
+    public string FileName { get; set; } = "";
+    public string ContentType { get; set; } = "";
+    public long SizeBytes { get; set; }
+    public string StorageKey { get; set; } = "";
+    public DateTime UploadedAt { get; set; }
+}
+
+/// <summary>A validated, sanitised file ready to be attached (bytes already stored).</summary>
+public record NewAttachment(Guid Id, string FileName, string ContentType, long SizeBytes, string StorageKey);
+
 public class Notification
 {
     public Guid Id { get; set; } = Guid.NewGuid();

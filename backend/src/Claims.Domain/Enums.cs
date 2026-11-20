@@ -44,4 +44,5 @@ public static class ClaimEventTypes
     public const string Approved = "ClaimApproved";
     public const string Rejected = "ClaimRejected";
     public const string Settled = "ClaimSettled";
+    public const string EvidenceAdded = "EvidenceAdded";
 }

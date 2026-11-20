@@ -17,6 +17,7 @@ pick up, assess, and settle or reject them; managers see workload and outstandin
 | Backend | .NET 8 Web API (`Claims.Api`) + .NET Worker (`Claims.Worker`) |
 | Database | PostgreSQL 16 (EF Core 8) |
 | Messaging | Kafka 3.8 (KRaft, single node) |
+| Photo storage | S3-compatible object store (SeaweedFS in Docker; private bucket) |
 | Auth | JWT bearer, BCrypt password hashes, role policies |
 | Tests | xUnit |
 
@@ -29,7 +30,7 @@ pick up, assess, and settle or reject them; managers see workload and outstandin
 ## Run it
 
 ```bash
-# 1. Infrastructure (Postgres on host port 5433, Kafka on 9092)
+# 1. Infrastructure (Postgres on host port 5433, Kafka on 9092, S3 photo store on 8333)
 docker compose up -d
 
 # 2. API — applies migrations and seeds demo data on first start
@@ -98,6 +99,14 @@ Full contract: Swagger UI at `/swagger` when the API is running.
 1. **Async resilience:** stop the Worker, submit a claim as Alice, start the Worker again. Notifications appear, because nothing was lost; the worker catches up from Kafka.
 2. **Concurrency:** have two officers pick up the same claim at once. One gets 200, the other gets 409.
 3. **Ownership:** as Alice, request one of Ben's claim ids. The API returns 404.
+
+## Photo evidence
+
+- Claimants attach up to 10 photos when reporting, when answering an information request, or later while the claim is open.
+- The browser resizes each photo (long edge 2048px) and re-encodes it as JPEG before upload: a 6 MB phone photo becomes roughly 400 KB, and all metadata including GPS is dropped.
+- The API does not trust the client. It checks the actual file bytes (JPEG/PNG only, 10 MB max), strips EXIF/XMP/IPTC and PNG text chunks itself, and stores the file under a server-generated key. The original file name is display-only.
+- Photos are served only through the API, with the same ownership rule as claims (another claimant gets 404), plus `nosniff` and a sandbox CSP.
+- MinIO no longer publishes Docker images, so the local store is SeaweedFS. The code uses the AWS S3 SDK, so it works the same against S3.
 
 ## Known limitations / next steps
 

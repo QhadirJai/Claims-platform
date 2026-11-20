@@ -10,6 +10,7 @@ public class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options, IEventPu
     public DbSet<InformationRequest> InformationRequests => Set<InformationRequest>();
     public DbSet<ClaimEvent> ClaimEvents => Set<ClaimEvent>();
     public DbSet<Notification> Notifications => Set<Notification>();
+    public DbSet<ClaimAttachment> ClaimAttachments => Set<ClaimAttachment>();
 
     /// <summary>
     /// Saves, then publishes any newly added ClaimEvents to Kafka.
@@ -53,6 +54,7 @@ public class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options, IEventPu
         b.Entity<InformationRequest>().Property(x => x.Id).ValueGeneratedNever();
         b.Entity<ClaimEvent>().Property(x => x.Id).ValueGeneratedNever();
         b.Entity<Notification>().Property(x => x.Id).ValueGeneratedNever();
+        b.Entity<ClaimAttachment>().Property(x => x.Id).ValueGeneratedNever();
 
         b.Entity<User>(e =>
         {
@@ -87,6 +89,7 @@ public class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options, IEventPu
             e.HasOne(c => c.AssignedOfficer).WithMany().HasForeignKey(c => c.AssignedOfficerId).OnDelete(DeleteBehavior.Restrict);
             e.HasMany(c => c.InformationRequests).WithOne().HasForeignKey(r => r.ClaimId);
             e.HasMany(c => c.Events).WithOne().HasForeignKey(ev => ev.ClaimId);
+            e.HasMany(c => c.Attachments).WithOne().HasForeignKey(a => a.ClaimId);
             e.Ignore(c => c.IsOpen);
             e.Ignore(c => c.OutstandingExposure);
         });
@@ -104,6 +107,15 @@ public class ClaimsDbContext(DbContextOptions<ClaimsDbContext> options, IEventPu
             e.Property(ev => ev.FromStatus).HasConversion<string>().HasMaxLength(20);
             e.Property(ev => ev.ToStatus).HasConversion<string>().HasMaxLength(20);
             e.Property(ev => ev.Note).HasMaxLength(2000);
+        });
+
+        b.Entity<ClaimAttachment>(e =>
+        {
+            e.HasIndex(a => a.ClaimId);
+            e.HasIndex(a => a.StorageKey).IsUnique();
+            e.Property(a => a.FileName).HasMaxLength(100);
+            e.Property(a => a.ContentType).HasMaxLength(50);
+            e.Property(a => a.StorageKey).HasMaxLength(200);
         });
 
         b.Entity<Notification>(e =>

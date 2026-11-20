@@ -14,6 +14,8 @@ var config = builder.Configuration;
 builder.Services.AddDbContext<ClaimsDbContext>(o => o.UseNpgsql(config.GetConnectionString("Claims")));
 builder.Services.AddSingleton<IEventPublisher, KafkaEventPublisher>();
 builder.Services.AddSingleton(TimeProvider.System);
+builder.Services.AddSingleton(config.GetSection("Storage").Get<StorageOptions>() ?? new StorageOptions());
+builder.Services.AddSingleton<IObjectStorage, S3ObjectStorage>();
 
 // ── Security layer 1: authentication (JWT) ─────────────────────────────────
 var jwt = config.GetSection("Jwt").Get<JwtOptions>() ?? throw new InvalidOperationException("Jwt config missing");

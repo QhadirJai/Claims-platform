@@ -11,7 +11,7 @@ namespace Claims.Api.Controllers;
 [ApiController]
 [Route("api/staff/claims")]
 [Authorize(Policy = Policies.Staff)]
-public class StaffClaimsController(ClaimsDbContext db, TimeProvider clock) : ControllerBase
+public class StaffClaimsController(ClaimsDbContext db, IObjectStorage storage, TimeProvider clock) : ControllerBase
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
 
@@ -30,7 +30,7 @@ public class StaffClaimsController(ClaimsDbContext db, TimeProvider clock) : Con
         pageSize = Math.Clamp(pageSize, 1, 100);
         var me = User.Id();
 
-        var q = db.Claims.AsNoTracking().Include(c => c.Claimant).Include(c => c.AssignedOfficer).AsQueryable();
+        var q = db.Claims.AsNoTracking().Include(c => c.Claimant).Include(c => c.AssignedOfficer).Include(c => c.Attachments).AsQueryable();
         q = scope.ToLowerInvariant() switch
         {
             "mine" => q.Where(c => c.AssignedOfficerId == me),
@@ -53,6 +53,14 @@ public class StaffClaimsController(ClaimsDbContext db, TimeProvider clock) : Con
     {
         var claim = await Load(id, tracking: false);
         return claim is null ? NotFound() : claim.ToDetail();
+    }
+
+    [HttpGet("{id:guid}/attachments/{attachmentId:guid}")]
+    public async Task<IActionResult> Download(Guid id, Guid attachmentId, CancellationToken ct)
+    {
+        var attachment = await db.ClaimAttachments.AsNoTracking()
+            .SingleOrDefaultAsync(a => a.Id == attachmentId && a.ClaimId == id, ct);
+        return attachment is null ? NotFound() : await AttachmentHandling.ServeAsync(attachment, Response, storage, ct);
     }
 
     /// <summary>Pick up a claim. Optimistic concurrency (xmin) → 409 if another officer got there first.</summary>
@@ -97,7 +105,7 @@ public class StaffClaimsController(ClaimsDbContext db, TimeProvider clock) : Con
     {
         var q = db.Claims
             .Include(c => c.Claimant).Include(c => c.AssignedOfficer)
-            .Include(c => c.InformationRequests).Include(c => c.Events)
+            .Include(c => c.InformationRequests).Include(c => c.Events).Include(c => c.Attachments)
             .AsSplitQuery()
             .Where(c => c.Id == id);
         return (tracking ? q : q.AsNoTracking()).SingleOrDefaultAsync();

@@ -146,6 +146,9 @@ public class NotificationConsumer(IServiceScopeFactory scopes, IConfiguration co
             case ClaimEventTypes.Settled:
                 To(m.ClaimantId, $"Claim {m.ClaimNumber} has been settled. {m.Note}.");
                 break;
+            case ClaimEventTypes.EvidenceAdded:
+                To(m.AssignedOfficerId, $"New photos on {m.ClaimNumber}: {m.Note}.");
+                break;
             // ReserveSet is internal — no claimant notification by design.
         }
         return list;

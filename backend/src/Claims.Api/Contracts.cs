@@ -21,9 +21,11 @@ public record SubmitClaimRequest(
 public record ClaimSummaryDto(
     Guid Id, string ClaimNumber, ClaimType Type, Market Market, ClaimStatus Status,
     decimal ClaimedAmount, decimal? ReserveAmount, decimal? ApprovedAmount,
-    string ClaimantName, string? AssignedOfficerName, DateTime CreatedAt, DateTime UpdatedAt, int AgeDays);
+    string ClaimantName, string? AssignedOfficerName, DateTime CreatedAt, DateTime UpdatedAt, int AgeDays,
+    int PhotoCount);
 
 public record InformationRequestDto(Guid Id, string Question, string? Response, DateTime RequestedAt, DateTime? RespondedAt);
+public record AttachmentDto(Guid Id, string FileName, string ContentType, long SizeBytes, DateTime UploadedAt);
 public record TimelineEntryDto(string EventType, ClaimStatus? FromStatus, ClaimStatus ToStatus, string? Note, DateTime OccurredAt);
 
 public record ClaimDetailDto(
@@ -33,7 +35,8 @@ public record ClaimDetailDto(
     string ClaimantName, Guid? AssignedOfficerId, string? AssignedOfficerName,
     DateTime CreatedAt, DateTime UpdatedAt, DateTime? ClosedAt,
     IReadOnlyList<InformationRequestDto> InformationRequests,
-    IReadOnlyList<TimelineEntryDto> Timeline);
+    IReadOnlyList<TimelineEntryDto> Timeline,
+    IReadOnlyList<AttachmentDto> Attachments);
 
 public record RespondRequest([Required, StringLength(4000, MinimumLength = 1)] string Response);
 public record ReserveRequest([Range(0, 100_000_000)] decimal Amount);

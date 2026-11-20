@@ -15,7 +15,7 @@ namespace Claims.Api.Controllers;
 [ApiController]
 [Route("api/claims")]
 [Authorize(Policy = Policies.Claimant)]
-public class ClaimsController(ClaimsDbContext db, TimeProvider clock) : ControllerBase
+public class ClaimsController(ClaimsDbContext db, IObjectStorage storage, TimeProvider clock) : ControllerBase
 {
     private DateTime Now => clock.GetUtcNow().UtcDateTime;
 
@@ -36,7 +36,7 @@ public class ClaimsController(ClaimsDbContext db, TimeProvider clock) : Controll
     {
         var userId = User.Id();
         var claims = await db.Claims.AsNoTracking()
-            .Include(c => c.Claimant).Include(c => c.AssignedOfficer)
+            .Include(c => c.Claimant).Include(c => c.AssignedOfficer).Include(c => c.Attachments)
             .Where(c => c.ClaimantId == userId)
             .OrderByDescending(c => c.CreatedAt)
             .ToListAsync();
@@ -62,12 +62,50 @@ public class ClaimsController(ClaimsDbContext db, TimeProvider clock) : Controll
         return ForClaimant(claim);
     }
 
+    /// <summary>Attach photos (multipart field "files"). Owner only; when and how many is a domain rule.</summary>
+    [HttpPost("{id:guid}/attachments")]
+    [RequestSizeLimit(AttachmentHandling.MaxRequestBytes)]
+    [RequestFormLimits(MultipartBodyLengthLimit = AttachmentHandling.MaxRequestBytes)]
+    public async Task<ActionResult<ClaimDetailDto>> Upload(Guid id, [FromForm] IFormFileCollection files, CancellationToken ct)
+    {
+        var claim = await LoadOwn(id);
+        if (claim is null) return NotFound();
+
+        // Cheap rule check before touching storage; the domain re-checks when attaching.
+        if (claim.Attachments.Count + files.Count > Claim.MaxAttachments)
+            throw new DomainException($"A claim can have at most {Claim.MaxAttachments} photos ({claim.Attachments.Count} already attached).");
+
+        var stored = await AttachmentHandling.StoreAsync(claim.Id, files, storage, ct);
+        try
+        {
+            claim.AddAttachments(stored, User.Id(), Now);
+            await db.SaveChangesAsync(ct);
+        }
+        catch
+        {
+            await AttachmentHandling.DeleteAsync(stored, storage);
+            throw;
+        }
+        return ForClaimant(claim);
+    }
+
+    [HttpGet("{id:guid}/attachments/{attachmentId:guid}")]
+    public async Task<IActionResult> Download(Guid id, Guid attachmentId, CancellationToken ct)
+    {
+        var userId = User.Id();
+        var attachment = await db.ClaimAttachments.AsNoTracking()
+            .Where(a => a.Id == attachmentId && a.ClaimId == id)
+            .Where(a => db.Claims.Any(c => c.Id == a.ClaimId && c.ClaimantId == userId)) // ownership
+            .SingleOrDefaultAsync(ct);
+        return attachment is null ? NotFound() : await AttachmentHandling.ServeAsync(attachment, Response, storage, ct);
+    }
+
     private Task<Claim?> LoadOwn(Guid id, bool tracking = true)
     {
         var userId = User.Id();
         var q = db.Claims
             .Include(c => c.Claimant).Include(c => c.AssignedOfficer)
-            .Include(c => c.InformationRequests).Include(c => c.Events)
+            .Include(c => c.InformationRequests).Include(c => c.Events).Include(c => c.Attachments)
             .AsSplitQuery()
             .Where(c => c.Id == id && c.ClaimantId == userId);
         return (tracking ? q : q.AsNoTracking()).SingleOrDefaultAsync();

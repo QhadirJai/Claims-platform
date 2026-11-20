@@ -1,0 +1,9 @@
+{
+  "identities": [
+    {
+      "name": "claims-api",
+      "credentials": [{ "accessKey": "claims_s3", "secretKey": "claims_s3_dev_pw" }],
+      "actions": ["Admin", "Read", "Write", "List", "Tagging"]
+    }
+  ]
+}
