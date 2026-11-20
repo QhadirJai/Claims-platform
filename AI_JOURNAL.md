@@ -88,3 +88,22 @@ This is the demo for "what happens if the async side is down": nothing is lost, 
 **Tests:** 18 passing (added notification routing tests).
 
 ---
+
+## Session 5 — Angular frontend
+
+**Asked:** One Angular app, two portals by role: claimant (responsive) and staff (desktop-first).
+
+**Accepted:**
+- Standalone components, lazy-loaded routes per portal, signals for state, functional interceptor + role guard.
+- Route guard is explicitly **UX only** — API remains the security boundary.
+- Plain SCSS, no UI library: faster install, fully neutral/unbranded look.
+- Queue sorted oldest-first and highlights unassigned claims older than 7 days (what an officer needs to manage workload).
+- Staff action panel only shows actions valid for the current status, mirroring the domain rules.
+
+**Overrode:**
+- AI first used the `currency:'USD'` pipe on claimant screens. Six markets = six currencies; showing "$" would be wrong.
+  Switched to plain number formatting (multi-currency is listed as out of scope).
+
+**Trade-off noted:** JWT kept in `sessionStorage` (cleared on tab close). An httpOnly cookie would be safer against XSS — listed as next step.
+
+---
